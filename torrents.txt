@@ -1,3 +1,4 @@
 machining-1=[magnet:?xt=urn:btih:e77eafedcbef0969ee03f964fd6db9ebbbc569ad&dn=10MT+notes&tr=udp://tracker.openbittorrent.com:80&tr=udp://tracker.opentrackr.org:1337/announce]
 Machining-Metalwork-Workshop-Engineering=[magnet:?xt=urn:btih:e77eafedcbef0969ee03f964fd6db9ebbbc569ad&dn=10MT+notes&tr=udp://tracker.openbittorrent.com:80&tr=udp://tracker.opentrackr.org:1337/announce]
 machining=[magnet:?xt=urn:btih:184cf27cf6883c181f019a0a2997a9e55387a012&dn=machining&tr=udp://tracker.openbittorrent.com:80&tr=udp://tracker.opentrackr.org:1337/announce]
+Black_Smith=[magnet:?xt=urn:btih:2b9748d897e4add3b90ef8310e8ae21696a1ee42&dn=Blacksmithing&tr=udp://tracker.openbittorrent.com:80&tr=udp://tracker.opentrackr.org:1337/announce]
