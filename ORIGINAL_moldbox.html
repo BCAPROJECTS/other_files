@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Casting Mold - Dual Labeled Boxes</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
+        #info {
+            position: absolute; top: 20px; left: 20px;
+            background: rgba(10, 10, 20, 0.85); color: white;
+            padding: 14px 22px; border-radius: 12px;
+            border-left: 6px solid #ffaa00; z-index: 100;
+            font-size: 15px; pointer-events: none;
+        }
+        .css-label {
+            color: white; font-size: 14px; font-weight: 700;
+            background: rgba(10, 15, 20, 0.85);
+            padding: 4px 8px; border-radius: 4px;
+            border: 1px solid #555; pointer-events: none;
+        }
+        .lbl-x { border-left: 3px solid #ff0000; }
+        .lbl-y { border-left: 3px solid #00ff00; }
+        .lbl-z { border-left: 3px solid #0066ff; }
+        .legend {
+            position: absolute; bottom: 20px; left: 20px;
+            color: #eee; background: rgba(0,0,0,0.5);
+            padding: 8px 16px; border-radius: 8px; font-size: 13px;
+        }
+    </style>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+    <div id="info">
+        <strong>🏭 MOLD & SAFETY CUBE</strong><br>
+        Outer: 508×660×500 mm | Safety: 408×560×350 mm <br>
+        <strong>Max Pouring Weight </strong> <br>
+        50 KG
+    </div>
+
+    <div class="legend">
+        <span style="color:#ff0000;">X (Width)</span> | 
+        <span style="color:#00ff00;">Y (Height)</span> | 
+        <span style="color:#0066ff;">Z (Length)</span>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x1a1a1a);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 5000);
+        camera.position.set(1000, 600, 1000);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
+
+        const labelRenderer = new CSS2DRenderer();
+        labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        labelRenderer.domElement.style.position = 'absolute';
+        labelRenderer.domElement.style.top = '0';
+        labelRenderer.domElement.style.pointerEvents = 'none';
+        document.body.appendChild(labelRenderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.target.set(0, 250, 0);
+
+        scene.add(new THREE.AmbientLight(0x404060));
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(500, 800, 600);
+        scene.add(light);
+
+        function createLabeledBox(w, h, d, baseColor, isOuter) {
+            const group = new THREE.Group();
+            const geo = new THREE.BoxGeometry(w, h, d);
+            const mat = new THREE.MeshPhongMaterial({
+                color: baseColor, transparent: true, opacity: 0.15,
+                depthWrite: false, side: THREE.DoubleSide
+            });
+            const mesh = new THREE.Mesh(geo, mat);
+            group.add(mesh);
+
+            const edges = new THREE.EdgesGeometry(geo);
+            const pos = edges.attributes.position.array;
+            const hw = w / 2, hh = h / 2, hd = d / 2;
+
+            const stickGeo = new THREE.CylinderGeometry(1, 1, 1, 5);
+            stickGeo.translate(0, 0.5, 0);
+            stickGeo.rotateX(Math.PI / 2);
+
+            const isMatch = (v1, v2, p1, p2) => 
+                (v1.distanceTo(p1) < 0.1 && v2.distanceTo(p2) < 0.1) || 
+                (v1.distanceTo(p2) < 0.1 && v2.distanceTo(p1) < 0.1);
+
+            for (let i = 0; i < pos.length; i += 6) {
+                const sV = new THREE.Vector3(pos[i], pos[i+1], pos[i+2]);
+                const eV = new THREE.Vector3(pos[i+3], pos[i+4], pos[i+5]);
+
+                let color = baseColor, txt = null, cls = "";
+                let matchW = false, matchH = false, matchL = false;
+
+                if (isOuter) {
+                    matchW = isMatch(sV, eV, new THREE.Vector3(-hw, hh, hd), new THREE.Vector3(hw, hh, hd));
+                    matchH = isMatch(sV, eV, new THREE.Vector3(hw, -hh, hd), new THREE.Vector3(hw, hh, hd));
+                    matchL = isMatch(sV, eV, new THREE.Vector3(hw, -hh, hd), new THREE.Vector3(hw, -hh, -hd));
+                } else {
+                    matchW = isMatch(sV, eV, new THREE.Vector3(-hw, -hh, hd), new THREE.Vector3(hw, -hh, hd));
+                    matchH = isMatch(sV, eV, new THREE.Vector3(-hw, -hh, hd), new THREE.Vector3(-hw, hh, hd));
+                    matchL = isMatch(sV, eV, new THREE.Vector3(-hw, -hh, hd), new THREE.Vector3(-hw, -hh, -hd));
+                }
+
+                if (matchW) { color = 0xff0000; txt = `W: ${w}mm`; cls = "lbl-x"; }
+                else if (matchH) { color = 0x00ff00; txt = `H: ${h}mm`; cls = "lbl-y"; }
+                else if (matchL) { color = 0x0066ff; txt = `L: ${d}mm`; cls = "lbl-z"; }
+
+                const m = new THREE.Mesh(stickGeo, new THREE.MeshBasicMaterial({ color: color }));
+                m.position.copy(sV); m.lookAt(eV); m.scale.z = sV.distanceTo(eV);
+                group.add(m);
+
+                if (txt) {
+                    const midPoint = new THREE.Vector3().copy(sV).lerp(eV, 0.5);
+                    const outDir = midPoint.clone().normalize();
+                    const stickLength = isOuter ? 140 : 60;
+                    const endPoint = midPoint.clone().add(outDir.multiplyScalar(stickLength));
+
+                    const lineGeo = new THREE.BufferGeometry().setFromPoints([midPoint, endPoint]);
+                    group.add(new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ color: color, transparent: true, opacity: 0.7 })));
+
+                    const div = document.createElement('div');
+                    div.className = 'css-label ' + cls;
+                    div.textContent = (isOuter ? "Outer " : "") + txt;
+                    const label = new CSS2DObject(div);
+                    label.position.copy(endPoint);
+                    group.add(label);
+                }
+            }
+            return group;
+        }
+
+        const outerW = 508, outerH = 500, outerD = 660;
+        const outerBox = createLabeledBox(outerW, outerH, outerD, 0x888888, true);
+        outerBox.position.y = outerH / 2;
+        scene.add(outerBox);
+
+        const safeW = 408, safeH = 350, safeD = 560;
+        const safeBox = createLabeledBox(safeW, safeH, safeD, 0xff8800, false);
+        safeBox.position.y = 245;
+        scene.add(safeBox);
+
+        // --- Parting Line (Wireframe) ---
+        const plMat = new THREE.LineBasicMaterial({ color: 0xff8800 });
+        const plPoints = [
+            new THREE.Vector3(-outerW/2, 250, -outerD/2),
+            new THREE.Vector3(outerW/2, 250, -outerD/2),
+            new THREE.Vector3(outerW/2, 250, outerD/2),
+            new THREE.Vector3(-outerW/2, 250, outerD/2),
+            new THREE.Vector3(-outerW/2, 250, -outerD/2)
+        ];
+        scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(plPoints), plMat));
+
+        // --- ADDED PARTING SURFACE (The "Vision" from the first code) ---
+        const partingSurfaceGeo = new THREE.PlaneGeometry(outerW, outerD);
+        partingSurfaceGeo.rotateX(-Math.PI / 2);
+        const partingSurfaceMesh = new THREE.Mesh(partingSurfaceGeo, new THREE.MeshBasicMaterial({
+            color: 0xff8800, transparent: true, opacity: 0.3, side: THREE.DoubleSide, depthWrite: false
+        }));
+        partingSurfaceMesh.position.y = 250;
+        scene.add(partingSurfaceMesh);
+
+        // --- Top Holes ---
+        const holeGeo = new THREE.CylinderGeometry(26, 26, 5, 50);
+        const holeMat = new THREE.MeshBasicMaterial({ color: 0xff9000 }); 
+        [{ x: 0, z: 0 }, { x: 160, z: 0 }, { x: 0, z: 235 }, { x: 160, z: 235 }].forEach(pos => {
+            const h = new THREE.Mesh(holeGeo, holeMat);
+            h.position.set(pos.x, outerH + 0.5, pos.z);
+            scene.add(h);
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+            labelRenderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
